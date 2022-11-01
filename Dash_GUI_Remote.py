@@ -12,7 +12,9 @@ import pandas as pd
 from urllib.parse import quote as urlquote
 from dash.dependencies import Input, Output
 import socket
-
+import logging
+import threading
+import time
 #build the server for transffering to raspberry pi 
 HOST= "10.0.0.96" #Standart loopback interface address(local host)
 PORT=65432 # port to listen on ( non-privileged port are > 1023)
@@ -29,9 +31,22 @@ PORT=65432 # port to listen on ( non-privileged port are > 1023)
 #             if not data:
 #                 break
 #             conn.sendall(data)
+def thread_server():
+    s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.bind((HOST, PORT))
+    s.listen()
+    conn, addr =s.accept()
+    with conn:
+        print(f"Connected by {addr}")
+        while True:
+            data=conn.recv(1024)
+            if not data:
+                break
+            conn.sendall(data)
 
 
-
+server_thread=threading.Thread(target=thread_server)
+server_thread.start()
 app=Dash(__name__)
 
 dir_path=os.getcwd()
@@ -40,13 +55,16 @@ dir_path=os.getcwd()
 # for file_dir in files_in_dir:
 #     print(file_dir)
 
+
+
+
 app.layout = html.Div([
         html.H1('Raspberry Data Transfer protocol',style={'textAlign':'center', 'color':'Blue'}),
         html.Br(),
         'Select file to upload to your raspberry pi',
         
-        dcc.Input=(id='Raspberry_ip',type='text',value='0.0.0.0'),
-        dcc.Input=(id='Raspberry_port',type='text',value='00000'),
+        # dcc.Input(id='Raspberry_ip',type='text',value='0.0.0.0'),
+        # dcc.Input(id='Raspberry_port',type='text',value='00000'),
         
          
         
@@ -89,6 +107,11 @@ def uploaded_files():
         if os.path.isfile(path):
             files.append(filename)
     return files
+def save_file(name, content):
+    """Decode and store a file uploaded with Plotly Dash."""
+    data = content.encode("utf8").split(b";base64,")[1]
+    with open(os.path.join(dir_path, name), "wb") as fp:
+        fp.write(base64.decodebytes(data))
 
 @app.callback(
     Output("files_list", "children"),
@@ -98,9 +121,9 @@ def uploaded_files():
 def update_output(uploaded_filenames, uploaded_file_contents):
     """Save uploaded files and regenerate the file list."""
 
-    # if uploaded_filenames is not None and uploaded_file_contents is not None:
-    #     for name, data in zip(uploaded_filenames, uploaded_file_contents):
-    #         save_file(name, data)
+    if uploaded_filenames is not None and uploaded_file_contents is not None:
+        for name, data in zip(uploaded_filenames, uploaded_file_contents):
+            save_file(name, data)
 
     files = uploaded_files()
     if len(files) == 0:
