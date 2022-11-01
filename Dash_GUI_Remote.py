@@ -17,17 +17,19 @@ import socket
 HOST= "10.0.0.96" #Standart loopback interface address(local host)
 PORT=65432 # port to listen on ( non-privileged port are > 1023)
 
-with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-    s.bind((HOST, PORT))
-    s.listen()
-    conn, addr =s.accept()
-    with conn:
-        print(f"Connected by {addr}")
-        while True:
-            data = conn.recv(1024)
-            if not data:
-                break
-            conn.sendall(data)
+#if we want to create a temporary server 
+# with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+#     s.bind((HOST, PORT))
+#     s.listen()
+#     conn, addr =s.accept()
+#     with conn:
+#         print(f"Connected by {addr}")
+#         while True:
+#             data = conn.recv(1024)
+#             if not data:
+#                 break
+#             conn.sendall(data)
+
 
 
 app=Dash(__name__)
@@ -39,12 +41,18 @@ dir_path=os.getcwd()
 #     print(file_dir)
 
 app.layout = html.Div([
-    html.H1('Raspberry Data Transfer protocol',style={'textAlign':'center', 'color':'Blue'}),
-    html.Br(),
-    'Select file to upload to your raspberry pi',
-    
-    
-    dcc.Upload(id='upload_file',children=html.Div(['Drag and Drop or',html.A('Select Files')]),
+        html.H1('Raspberry Data Transfer protocol',style={'textAlign':'center', 'color':'Blue'}),
+        html.Br(),
+        'Select file to upload to your raspberry pi',
+        
+        dcc.Input=(id='Raspberry_ip',type='text',value='0.0.0.0'),
+        dcc.Input=(id='Raspberry_port',type='text',value='00000'),
+        
+         
+        
+        dcc.Upload(
+            id='upload_file',
+            children=html.Div(['Drag and Drop or',html.A('Select Files')]),
             style={
             'width': '100%',
             'height': '60px',
@@ -62,7 +70,11 @@ app.layout = html.Div([
             html.H3(['the selected folder is :' ,dir_path]),
             'the files in the folders are',
             html.Div(id='files_list'),
-],style={'background':'LightGreen','height':"100vh",'width':"100vw"})
+    ],
+    style={'background':'LightGreen','height':"100vh",'width':"100vw"}
+)
+
+
 
 def file_download_link(filename):
     """Create a Plotly Dash 'A' element that downloads a file from the app."""
@@ -81,6 +93,7 @@ def uploaded_files():
 @app.callback(
     Output("files_list", "children"),
     [Input("upload_file", "filename"), Input("upload_file", "contents")],
+    #prevent_initial_call=True
 )
 def update_output(uploaded_filenames, uploaded_file_contents):
     """Save uploaded files and regenerate the file list."""
