@@ -10,6 +10,25 @@ from dash import Dash, html, dcc
 import plotly.express as px
 import pandas as pd
 from urllib.parse import quote as urlquote
+from dash.dependencies import Input, Output
+import socket
+
+#build the server for transffering to raspberry pi 
+HOST= "10.0.0.96" #Standart loopback interface address(local host)
+PORT=65432 # port to listen on ( non-privileged port are > 1023)
+
+with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+    s.bind((HOST, PORT))
+    s.listen()
+    conn, addr =s.accept()
+    with conn:
+        print(f"Connected by {addr}")
+        while True:
+            data = conn.recv(1024)
+            if not data:
+                break
+            conn.sendall(data)
+
 
 app=Dash(__name__)
 
@@ -53,10 +72,28 @@ def file_download_link(filename):
 def uploaded_files():
     """List the files in the upload directory."""
     files = []
-    for filename in os.listdir(UPLOAD_DIRECTORY):
-        path = os.path.join(UPLOAD_DIRECTORY, filename)
+    for filename in os.listdir(dir_path):
+        path = os.path.join(dir_path, filename)
         if os.path.isfile(path):
             files.append(filename)
     return files
+
+@app.callback(
+    Output("files_list", "children"),
+    [Input("upload_file", "filename"), Input("upload_file", "contents")],
+)
+def update_output(uploaded_filenames, uploaded_file_contents):
+    """Save uploaded files and regenerate the file list."""
+
+    # if uploaded_filenames is not None and uploaded_file_contents is not None:
+    #     for name, data in zip(uploaded_filenames, uploaded_file_contents):
+    #         save_file(name, data)
+
+    files = uploaded_files()
+    if len(files) == 0:
+        return [html.Li("No files yet!")]
+    else:
+        return [html.Li(file_download_link(filename)) for filename in files]
+
 if __name__ == '__main__':
     app.run_server(debug=True)
