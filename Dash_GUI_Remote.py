@@ -15,6 +15,7 @@ import socket
 import logging
 import threading
 import time
+import paramiko as pa
 #build the server for transffering to raspberry pi 
 HOST= "10.0.0.96" #Standart loopback interface address(local host)
 PORT=65432 # port to listen on ( non-privileged port are > 1023)
@@ -61,7 +62,7 @@ init_file_path=dir_path
 app.layout = html.Div([
         html.H1('Raspberry Data Transfer protocol',style={'textAlign':'center', 'color':'Blue'}),
         html.Br(),
-        'Select file to upload to your raspberry pi',
+        'Select file to upload to your send list',
         
         # dcc.Input(id='Raspberry_ip',type='text',value='0.0.0.0'),
         # dcc.Input(id='Raspberry_port',type='text',value='00000'),
