@@ -45,12 +45,12 @@ def thread_server():
             conn.sendall(data)
 
 
-server_thread=threading.Thread(target=thread_server)
+# server_thread=threading.Thread(target=thread_server)
 # server_thread.start()
 app=Dash(__name__)
 
 dir_path=os.getcwd()
-
+init_file_path=dir_path
 # files_in_dir=os.listdir('/remote_gui_project/')
 # for file_dir in files_in_dir:
 #     print(file_dir)
@@ -87,7 +87,11 @@ app.layout = html.Div([
             ),
             html.H3(['the selected folder is :' ,dir_path]),
             'the files in the folders are',
-            html.Div(id='files_list'),
+            html.Br(),
+            dcc.Dropdown(id='dynamic_file_dropdown'),
+            # html.Div(id='files_list'),
+            dcc.Input(id='file_to_sent',type='text',value='No files were chosen'),
+            html.Button(id='send_button',n_clicks=0,children='Send')
     ],
     style={'background':'LightGreen','height':"100vh",'width':"100vw"}
 )
@@ -112,15 +116,34 @@ def save_file(name, content):
     data = content.encode("utf8").split(b";base64,")[1]
     with open(os.path.join(dir_path, name), "wb") as fp:
         fp.write(base64.decodebytes(data))
+        
+        
+        
 
-@app.callback(
-    Output("files_list", "children"),
+# @app.callback(
+#     Output("files_list", "children"),
+#     [Input("upload_file", "filename"), Input("upload_file", "contents")],
+#     #prevent_initial_call=True
+# )
+# def update_output(uploaded_filenames, uploaded_file_contents):
+#     """Save uploaded files and regenerate the file list."""
+#     global files
+#     if uploaded_filenames is not None and uploaded_file_contents is not None:
+#         for name, data in zip(uploaded_filenames, uploaded_file_contents):
+#             save_file(name, data)
+
+#     files = uploaded_files()
+#     if len(files) == 0:
+#         return [html.Li("No files yet!")]
+#     else:
+#         return [html.Li(file_download_link(filename)) for filename in files]
+    
+    
+@app.callback(Output("dynamic_file_dropdown", "options"),
     [Input("upload_file", "filename"), Input("upload_file", "contents")],
-    #prevent_initial_call=True
+    
 )
-def update_output(uploaded_filenames, uploaded_file_contents):
-    """Save uploaded files and regenerate the file list."""
-
+def update_options(uploaded_filenames, uploaded_file_contents):
     if uploaded_filenames is not None and uploaded_file_contents is not None:
         for name, data in zip(uploaded_filenames, uploaded_file_contents):
             save_file(name, data)
@@ -129,7 +152,18 @@ def update_output(uploaded_filenames, uploaded_file_contents):
     if len(files) == 0:
         return [html.Li("No files yet!")]
     else:
-        return [html.Li(file_download_link(filename)) for filename in files]
+        # return [html.Li(file_download_link(filename)) for filename in files]
+        return files
+
+
+@app.callback(Output("file_to_sent","value"),
+              Input('dynamic_file_dropdown','value')
+              )
+def update_sent_file(value):
+    return value
+
+
+
 
 if __name__ == '__main__':
     app.run_server(debug=True)
