@@ -91,6 +91,7 @@ app.layout = html.Div([
             dcc.Dropdown(id='dynamic_file_dropdown'),
             # html.Div(id='files_list'),
             dcc.Input(id='file_to_sent',type='text',value='No files were chosen'),
+            html.Br(),
             html.Button(id='send_button',n_clicks=0,children='Send')
     ],
     style={'background':'LightGreen','height':"100vh",'width':"100vw"}
