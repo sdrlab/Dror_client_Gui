@@ -46,7 +46,7 @@ def thread_server():
 
 
 server_thread=threading.Thread(target=thread_server)
-server_thread.start()
+# server_thread.start()
 app=Dash(__name__)
 
 dir_path=os.getcwd()
