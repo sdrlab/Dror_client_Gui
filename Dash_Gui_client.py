@@ -18,9 +18,9 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     print(f"the file size is {filesize}")
     new_file=open(file_name,"w")
     s.sendall(b"host is waiting for file to be send ")
-    
+    print(filesize)
     while True:
-            value3_from_host=s.recv(filesize)
+            value3_from_host=s.recv(int(filesize))
             new_file.write(bytes.decode(value2_from_host))
             s.sendall(b"raspberry pi function protocol is complete")
    
