@@ -14,15 +14,17 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     print(f"we recieved frm raspberry pi {file_name}")
     s.sendall(b"host is waiting for file size")
     value2_from_host=s.recv(1024)
-    filesize=bytes.decode(value2_from_host)
+    filesize=int(bytes.decode(value2_from_host))
     print(f"the file size is {filesize}")
-    new_file=open(file_name,"w")
+    new_file=open(file_name,"wb")
     s.sendall(b"host is waiting for file to be send ")
     print(filesize)
     while True:
-            value3_from_host=s.recv(int(filesize))
-            new_file.write(bytes.decode(value2_from_host))
-            s.sendall(b"raspberry pi function protocol is complete")
+            bytes_read=s.recv(int(filesize))
+            if not bytes_read:
+                 break
+            new_file.write(bytes_read)
+            # s.sendall(b"raspberry pi function protocol is complete")
    
 
   
