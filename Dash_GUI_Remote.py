@@ -16,10 +16,15 @@ import logging
 import threading
 import time
 import paramiko as pa
+import tqdm
+
 #build the server for transffering to raspberry pi 
 HOST= "10.0.0.96" #Standart loopback interface address(local host)
 PORT=65432 # port to listen on ( non-privileged port are > 1023)
-
+BUFFER_SIZE = 4096
+SEPARATOR = "<SEPARATOR>"
+#variable to get the name of the file 
+file_name=""
 #if we want to create a temporary server 
 # with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
 #     s.bind((HOST, PORT))
@@ -93,7 +98,8 @@ app.layout = html.Div([
             # html.Div(id='files_list'),
             dcc.Input(id='file_to_sent',type='text',value='No files were chosen'),
             html.Br(),
-            html.Button(id='send_button',n_clicks=0,children='Send')
+            html.Button(id='send_button',n_clicks=0,children='Send'),
+            dcc.Input(id='acknowledge_from_pi',type='text',value='No Ack recieve')
     ],
     style={'background':'LightGreen','height':"100vh",'width':"100vw"}
 )
@@ -159,11 +165,51 @@ def update_options(uploaded_filenames, uploaded_file_contents):
 
 
 @app.callback(Output("file_to_sent","value"),
-              Input('dynamic_file_dropdown','value')
+              Input('dynamic_file_dropdown','value'),prevent_initial_call=True
               )
 def update_sent_file(value):
+    file_name=value
+    print(f"you decided to send {file_name}")
     return value
 
+@app.callback(Output("acknowledge_from_pi","value"),
+              [Input('dynamic_file_dropdown','value')],prevent_initial_call=True
+              )
+def host_server_function(value_of_file):
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind((HOST, PORT))
+        s.listen()
+        conn, addr =s.accept()
+        with conn:
+            print(f"Connected by {addr}")
+            print(f"sending {value_of_file} to raspberry pi")
+            # filesize=os.path.getsize(file_name)
+            while True:
+                conn.sendall(str.encode(value_of_file))
+                data=conn.recv(1024)
+                if not data:
+                    break
+                print(f"the data we got is {data} ")
+                return "data send"
+            # s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            # s.bind((HOST, PORT))
+            # s.listen()
+            # conn, addr =s.accept()
+            # progress = tqdm.tqdm(range(filesize), f"Sending {file_name}", unit="B", unit_scale=True, unit_divisor=1024)
+            # with open(file_name,"rb") as f:
+            #     while True:
+            #         #read bytes from file 
+            #         bytes_read=f.read(BUFFER_SIZE)
+            #         if not bytes_read:
+            #             #file transmitting is done 
+            #             break
+            #         #we used sendall to assure transmittion in busy network
+                    
+
+        
+
+
+    
 
 
 
