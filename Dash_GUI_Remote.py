@@ -176,35 +176,53 @@ def update_sent_file(value):
               [Input('dynamic_file_dropdown','value')],prevent_initial_call=True
               )
 def host_server_function(value_of_file):
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        file_name=value_of_file
+        filesize=os.path.getsize(file_name)
+        s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.bind((HOST, PORT))
         s.listen()
         conn, addr =s.accept()
-        with conn:
-            print(f"Connected by {addr}")
-            print(f"sending {value_of_file} to raspberry pi")
-            # filesize=os.path.getsize(file_name)
+        progress = tqdm.tqdm(range(filesize), f"Sending {file_name}", unit="B", unit_scale=True, unit_divisor=1024)
+        with open(file_name,"rb") as f:
+            phase_counter=0
             while True:
-                conn.sendall(str.encode(value_of_file))
-                data=conn.recv(1024)
-                if not data:
-                    break
-                print(f"the data we got is {data} ")
-                return "data send"
-            # s=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            # s.bind((HOST, PORT))
-            # s.listen()
-            # conn, addr =s.accept()
-            # progress = tqdm.tqdm(range(filesize), f"Sending {file_name}", unit="B", unit_scale=True, unit_divisor=1024)
-            # with open(file_name,"rb") as f:
-            #     while True:
-            #         #read bytes from file 
-            #         bytes_read=f.read(BUFFER_SIZE)
-            #         if not bytes_read:
-            #             #file transmitting is done 
-            #             break
-            #         #we used sendall to assure transmittion in busy network
+                if(phase_counter==0):
+                    #send message of our intention to send this file name to raspberry pi
+                    s.sendall(str.encode(file_name))
+                    print(s.recv(1024))
+                    phase_counter+=1
+                elif(phase_counter==1):    
+                    #read bytes from file 
+                    bytes_read=f.read(BUFFER_SIZE)
+                    if not bytes_read:
+                        #file transmitting is done 
+                        break
+                    phase_counter+=1
+                elif(phase_counter==2):
+                    #we used sendall to assure transmittion in busy network
+                    s.sendall(bytes_read)
+                    progress.update(len(bytes_read))
+                    print(s.recv(1024))
+                    phase_counter+=1
+                else:
+                    return f"send {value_of_file} to raspberry pi FINISHED"
                     
+                    
+   # with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+    #     s.bind((HOST, PORT))
+    #     s.listen()
+    #     conn, addr =s.accept()
+    #     with conn:
+    #         print(f"Connected by {addr}")
+    #         print(f"sending {value_of_file} to raspberry pi")
+    #         # filesize=os.path.getsize(file_name)
+    #         while True:
+    #             conn.sendall(str.encode(value_of_file))
+    #             data=conn.recv(1024)
+    #             if not data:
+    #                 break
+    #             print(f"the data we got is {data} ")
+    #             return "data send"
 
         
 
